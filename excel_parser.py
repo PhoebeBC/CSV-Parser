@@ -29,7 +29,8 @@ def excel_parser(excel_file):
     df2_file_name = f"{os.path.splitext(excel_file)[0]} UKPI.xlsx"
     # Write the DataFrame back to the Excel file
     df2_extracted.to_excel(df2_file_name,index=False)
+    return df1_file_name
 
 
-excel_parser(r"C:\Users\phoeb\Documents\Work\Company software solutions\test vat return.xlsx")
+# excel_parser(r"C:\Users\phoeb\Documents\Work\Company software solutions\test vat return.xlsx")
 
