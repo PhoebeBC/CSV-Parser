@@ -5,13 +5,14 @@ import os
 import subprocess
 import platform
 import customtkinter as ct
+import re
 
 
-class CsvParserGui:
+class CsvParserGui():
 
     def __init__(self):
         self.appearance = ct.set_appearance_mode("System")
-        self.color_theme = ct.set_default_color_theme("blue")
+        self.color_theme = ct.set_default_color_theme("green")
 
         self.root = ct.CTk()
 
@@ -26,8 +27,8 @@ class CsvParserGui:
                                              font=('Arial', 14))
         self.select_file_label.pack(padx=5, pady=20)
 
-        self.enter_file_path = ct.CTkTextbox(self.root, width=350, height=40)
-        self.enter_file_path.pack()
+        self.enter_file_path = ct.CTkEntry(self.root, placeholder_text="Enter file pather here")
+        self.enter_file_path.pack(padx=20, pady=20)
 
         self.browse_button = ct.CTkButton(self.root, text="Browse...", command=self.browse_file)
         self.browse_button.pack(pady=10, padx=20)
@@ -60,19 +61,29 @@ class CsvParserGui:
     def show_message(self, message):
         messagebox.showinfo(title="Notification", message=message)
 
+    def on_closing(self):
+        if messagebox.askyesno(title="Quit?", message="do you really want to quit?"):
+            self.root.destroy()
+
+    def clear(self):
+        self.enter_file_path.delete('1.0', tk.END)
+
     def fill_file_path_box(self, file_path: str):
+        '''After a file has been selected using the browse function
+        this function fills the text box with that file path'''
         self.clear()
-        self.enter_file_path.insert(tk.END, file_path)
-        self.enter_file_path.see(tk.END)
+        self.enter_file_path.insert(index=tk.END, text=file_path)
+        # self.enter_file_path.see(tk.END)
 
     def browse_file(self):
+        '''This fuctioned is called with the browse button when the user is selecting the file'''
         file_path: str = filedialog.askopenfilename()
         print("Selected file:", file_path)
-        self.show_path(file_path)
         self.fill_file_path_box(file_path)
 
     def get_entered_file_path(self):
-        excel_to_parse = self.enter_file_path.get()
+        excel_to_parse = self.enter_file_path.get("1.0", tk.END)
+        excel_to_parse = re.sub(r'\n', '', excel_to_parse)
         print("Text saved:", excel_to_parse)
         return excel_to_parse
 
@@ -86,18 +97,19 @@ class CsvParserGui:
             subprocess.Popen(['xdg-open', directory])
 
     def generate_files(self):
+        '''This funtion is called when pressing the generate files button. Want to check the file is not empty by
+        retrieving the file name from the text box'''
         excel_to_parse = self.get_entered_file_path()
-        file_path = excel_parser(excel_to_parse)
-        self.show_message("Your files have been generated successfully.")
-        if self.check_state.get() == 1:
-            self.open_file_explorer(file_path)
-
-    def on_closing(self):
-        if messagebox.askyesno(title="Quit?", message="do you really want to quit?"):
-            self.root.destroy()
-
-    def clear(self):
-        self.enter_file_path.delete('1.0', tk.END)
+        try:
+            file_path = excel_parser(excel_to_parse)
+            self.show_message("Your files have been generated successfully.")
+            if self.check_state.get() == 1:
+                self.open_file_explorer(file_path)
+        except FileNotFoundError:
+            self.show_message("You have not selected a file.")
+        except Exception as e:
+            # Handle all other types of exceptions
+            print("An error occurred:", e)
 
 
 csv_parser = CsvParserGui()
