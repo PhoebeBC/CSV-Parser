@@ -69,5 +69,6 @@ def excel_parser(excel_file):
     generate_dataframe_output(df1, 'Sales', output_path, 'Date')
     generate_dataframe_output(df2,  'Purchase', output_path,'Belegdatum')
 
+    return output_path
 
-excel_parser(r"C:\Users\phoeb\Documents\Work\Company software solutions\test vat return.xlsx")
+# excel_parser(r"C:\Users\phoeb\Documents\Work\Company software solutions\test vat return.xlsx")
