@@ -1,17 +1,7 @@
-from typing import Callable, Any
 import pandas as pd
 import os
-from sales_invoice import format_data_in_rows, format_excel
-
-
-def date_format(df, date):
-    '''
-    Adjusts the date column to the required format of dd/mm/yyyy
-    '''
-    df[date] = pd.to_datetime(df[date])
-    date_format: Callable[[Any], Any] = lambda x: x.strftime('%d/%m/%Y')
-    df[date] = df[date].apply(date_format)
-    return df
+from sales_invoice import fill_data_for_sales_invoice
+from purchase_invoice import fill_data_for_purchase_invoice
 
 
 def create_empty_df(df):
@@ -28,6 +18,46 @@ def create_empty_df(df):
     return df_formatted_empty
 
 
+def format_excel(writer, sheet):
+    '''
+    Formats the output excel so value formats are correct and column widths are set
+    so all column headers can be seen.
+    '''
+    workbook = writer.book
+    worksheet = writer.sheets[sheet]
+    money_format = workbook.add_format({'num_format': '#,##0.00'})
+    # Setting column formats
+    worksheet.set_column('E:Q', 12)
+    worksheet.set_column('H:H', 12, money_format)
+    worksheet.set_column('J:J', 12, money_format)
+
+    small_columns = ['A:A', 'I:I', 'R:R']
+    for col in small_columns:
+        worksheet.set_column(col, 8)
+
+    big_columns = ['B:D', 'G:G', 'L:L', 'O:P']
+    for col in big_columns:
+        worksheet.set_column(col, 17)
+
+    writer.close()
+
+
+def generate_dataframe_output(df, invoice_type, output_path, date_column_name):
+    # only pulling rows where the date is not empty
+    df = df.dropna(subset=[date_column_name])
+    # Creating the output dataframe to be filled with data
+    df_formatted_empty = create_empty_df(df)
+    # Filling the output dataframe with data
+    if invoice_type == 'Sales':
+        df_formatted = fill_data_for_sales_invoice(df, df_formatted_empty)
+    else:
+        df_formatted = fill_data_for_purchase_invoice(df, df_formatted_empty)
+    # Outputting the dataframe to an excel
+    writer = pd.ExcelWriter(f"{output_path} {invoice_type} Invoice.xlsx", engine='xlsxwriter',date_format="dd/mm/yyyy", datetime_format="dd/mm/yyyy")
+    df_formatted.to_excel(writer, index=False, sheet_name=invoice_type+'Invoice')
+    # Formatting excel
+    format_excel(writer, invoice_type+'Invoice')
+
 def excel_parser(excel_file):
     # Path for Excel
     xls = pd.ExcelFile(excel_file)
@@ -35,45 +65,9 @@ def excel_parser(excel_file):
     df1 = pd.read_excel(xls, 'Sales Invoice VAT 20%', header=1)
     df2 = pd.read_excel(xls, 'UK purchase invoices', header=1)
 
-    # only pulling rows where the date is not empty
-    df1 = df1.dropna(subset=['Date'])
-    # Adjusting date column to correct format
-    df1 = date_format(df1, 'Date')
-    # Creating the output dataframe to be filled with data
-    df1_formatted_empty = create_empty_df(df1)
-    # Filling the output dataframe with data
-    df1_formatted = format_data_in_rows(df1, df1_formatted_empty)
-    # Outputting the dataframe to an excel
-    writer = pd.ExcelWriter(f"{os.path.splitext(excel_file)[0]} FANCY.xlsx", engine='xlsxwriter')
-    df1_formatted.to_excel(writer, index=False, sheet_name='report')
-    # Formatting excel
-    format_excel(writer)
-
-    # only pulling rows where the date is not empty
-    df2 = df2.dropna(subset=['Belegdatum'])
-    # Adjusting date column to correct format
-    df2 = date_format(df2, 'Belegdatum')
-    # Creating the output dataframe to be filled with data
-    df2_formatted_empty = create_empty_df(df2)
-    # Filling the output dataframe with data
-    df2_formatted = format_data_in_rows(df2, df2_formatted_empty)
-    # Outputting the dataframe to an excel
-    writer = pd.ExcelWriter(f"{os.path.splitext(excel_file)[0]} FANCY2.xlsx", engine='xlsxwriter')
-    df2_formatted.to_excel(writer, index=False, sheet_name='report')
-    # Formatting excel
-    format_excel(writer)
-
-    # # selecting the columns needed
-    # df2_extracted = df2.iloc[:, [0, 5, 7,8]]
-    # # only pulling rows where the date is not empty
-    # df2_extracted = df2_extracted.dropna(subset=['Belegdatum'])
-    # # removing timestamp from date
-    # df2_extracted['Belegdatum'] = df2_extracted['Belegdatum'].dt.date
-    # # Using found location to find where to save new file
-    # df2_file_name = f"{os.path.splitext(excel_file)[0]} UKPI.xlsx"
-    # # Write the DataFrame back to the Excel file
-    # df2_extracted.to_excel(df2_file_name,index=False)
-    # return df1_file_name
+    output_path = os.path.splitext(excel_file)[0]
+    generate_dataframe_output(df1, 'Sales', output_path, 'Date')
+    generate_dataframe_output(df2,  'Purchase', output_path,'Belegdatum')
 
 
 excel_parser(r"C:\Users\phoeb\Documents\Work\Company software solutions\test vat return.xlsx")
