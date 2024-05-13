@@ -1,4 +1,5 @@
 import tkinter as ct
+from excel_parser import excel_parser
 from tkinter import IntVar, Canvas, Entry, Button, PhotoImage, messagebox, filedialog, END, Checkbutton
 # import sys
 # sys.path.append(r'C:\Users\phoeb\PycharmProjects\CSV-Parser')
@@ -17,153 +18,6 @@ else:
     bundle_dir = Path(__file__).parent
 
 bundle_dir = Path.cwd() / bundle_dir
-
-
-def fill_data_for_sales_invoice(df, df_empty):
-    '''
-    Fills in the data for the empty dataframe df_empty using data from the Excel tab in df and the
-    requirements given. Returns a complete dataframe.
-    '''
-    # Setting Account Reference B1
-    df_empty.iloc[:, 1] = df.iloc[:, 2]
-    # Setting Nominal A/C Ref C2
-    df_empty.iloc[:, 2] = 4000
-    # Setting Date E4
-    df_empty.iloc[:, 4] = df.iloc[:, 0]
-    # Setting Reference F5
-    df_empty.iloc[:, 5] = df.iloc[:, 1]
-    # Setting Details G6
-    df_empty.iloc[:, 6] = df.iloc[:, 3]
-    # Setting Tax Code I8
-    df_empty.iloc[:, 8] = "T1"
-
-    rows = len(df)
-    for row in range(rows):
-        if df.iat[row, 6] == "Invoice":
-            # Setting Type A0
-            df_empty.iat[row, 0] = "SI"
-            # Setting Net Amount H7
-            df_empty.iat[row, 7] = abs(df.iat[row, 7])
-            # Setting Tax Amount J9
-            df_empty.iat[row, 9] = abs(df.iat[row, 5])
-        else:
-            df_empty.iat[row, 0] = "SC"
-            df_empty.iat[row, 7] = df.iat[row, 7]
-            df_empty.iat[row, 9] = df.iat[row, 5]
-
-    df_empty["Net Amount"] = df_empty["Net Amount"].astype(float)
-    df_empty["Tax Amount"] = df_empty["Tax Amount"].astype(float)
-
-    return df_empty
-
-
-
-def fill_data_for_purchase_invoice(df, df_empty):
-    '''
-    Fills in the data for the empty dataframe df_empty using data from the Excel tab in df and the
-    requirements given. Returns a complete dataframe.
-    '''
-    # Setting Account Reference B1
-    df_empty.iloc[:, 1] = df.iloc[:, 4]
-    # Setting Date E4
-    df_empty.iloc[:, 4] = df.iloc[:, 0]
-    # Setting Reference F5
-    df_empty.iloc[:, 5] = df.iloc[:, 1]
-    # Setting Details G6
-    df_empty.iloc[:, 6] = df.iloc[:, 5]
-    # Setting Tax Code I8
-    df_empty.iloc[:, 8] = "T1"
-
-    rows = len(df)
-    for row in range(rows):
-        if df.iat[row, 3] == "Eingangsrechnung":
-            # Setting Type A0
-            df_empty.iat[row, 0] = "PI"
-            # Setting Net Amount H7
-            df_empty.iat[row, 7] = abs(df.iat[row, 7])
-            # Setting Tax Amount J9
-            df_empty.iat[row, 9] = abs(df.iat[row, 8])
-        else:
-            df_empty.iat[row, 0] = "PC"
-            df_empty.iat[row, 7] = df.iat[row, 7]
-            df_empty.iat[row, 9] = df.iat[row, 8]
-        # Setting Nominal A/C Ref C2
-        if df.iat[row, 5] == "THE TAX DEPARTM":
-            df_empty.iat[row, 2] = 7601
-        else:
-            df_empty.iat[row, 2] = 5000
-
-    df_empty["Net Amount"] = df_empty["Net Amount"].astype(float)
-    df_empty["Tax Amount"] = df_empty["Tax Amount"].astype(float)
-
-    return df_empty
-
-def create_empty_df(df):
-    '''
-    Creating an empty dataframe with the same number of rows as df to be filled with data from df later.
-    '''
-    number_of_rows = len(df)
-    # Column names
-    column_names = ['Type', 'Account Reference', 'Nominal A/C Ref', 'Department Code', 'Date', 'Details',
-                        'Reference', 'Net Amount', 'Tax Code', 'Tax Amount', 'Exchange Rate', 'Extra Reference',
-                        'User Name', 'Project Refn', 'Cost Code Refn', 'Country of VAT', 'Report Type', 'Fund']
-    # Create a DataFrame with n rows for each column
-    df_formatted_empty = pd.DataFrame(columns=column_names, index=range(number_of_rows))
-    return df_formatted_empty
-
-
-def format_excel(writer, sheet):
-    '''
-    Formats the output excel so value formats are correct and column widths are set
-    so all column headers can be seen.
-    '''
-    workbook = writer.book
-    worksheet = writer.sheets[sheet]
-    money_format = workbook.add_format({'num_format': '#,##0.00'})
-    # Setting column formats
-    worksheet.set_column('E:Q', 12)
-    worksheet.set_column('H:H', 12, money_format)
-    worksheet.set_column('J:J', 12, money_format)
-
-    small_columns = ['A:A', 'I:I', 'R:R']
-    for col in small_columns:
-        worksheet.set_column(col, 8)
-
-    big_columns = ['B:D', 'G:G', 'L:L', 'O:P']
-    for col in big_columns:
-        worksheet.set_column(col, 17)
-
-    writer.close()
-
-
-def generate_dataframe_output(df, invoice_type, output_path, date_column_name):
-    # only pulling rows where the date is not empty
-    df = df.dropna(subset=[date_column_name])
-    # Creating the output dataframe to be filled with data
-    df_formatted_empty = create_empty_df(df)
-    # Filling the output dataframe with data
-    if invoice_type == 'Sales':
-        df_formatted = fill_data_for_sales_invoice(df, df_formatted_empty)
-    else:
-        df_formatted = fill_data_for_purchase_invoice(df, df_formatted_empty)
-    # Outputting the dataframe to an excel
-    writer = pd.ExcelWriter(f"{output_path} {invoice_type} Invoice.xlsx", engine='xlsxwriter',date_format="dd/mm/yyyy", datetime_format="dd/mm/yyyy")
-    df_formatted.to_excel(writer, index=False, sheet_name=invoice_type+'Invoice')
-    # Formatting excel
-    format_excel(writer, invoice_type+'Invoice')
-
-def excel_parser(excel_file):
-    # Path for Excel
-    xls = pd.ExcelFile(excel_file)
-    # convert one tab into a dataframe - setting the column headers to be the 2nd row
-    df1 = pd.read_excel(xls, 'Sales Invoice VAT 20%', header=1)
-    df2 = pd.read_excel(xls, 'UK purchase invoices', header=1)
-
-    output_path = os.path.splitext(excel_file)[0]
-    generate_dataframe_output(df1, 'Sales', output_path, 'Date')
-    generate_dataframe_output(df2,  'Purchase', output_path,'Belegdatum')
-
-    return output_path
 
 
 class CsvParserGui():
@@ -278,25 +132,15 @@ class CsvParserGui():
         else:
             subprocess.Popen(['xdg-open', directory])
 
-    def excel_parser(self, excel_file):
-        # Path for Excel
-        xls = pd.ExcelFile(excel_file)
-        # convert one tab into a dataframe - setting the column headers to be the 2nd row
-        df1 = pd.read_excel(xls, 'Sales Invoice VAT 20%', header=1)
-        df2 = pd.read_excel(xls, 'UK purchase invoices', header=1)
-
-        output_path = os.path.splitext(excel_file)[0]
-        generate_dataframe_output(df1, 'Sales', output_path, 'Date')
-        generate_dataframe_output(df2, 'Purchase', output_path, 'Belegdatum')
-
-        return output_path
-
     def generate_files(self):
         """This function is called when pressing the generate files button. Want to check the file is not empty by
         retrieving the file name from the text box"""
         excel_to_parse = self.get_entered_file_path()
         try:
             file_path = excel_parser(excel_to_parse)
+            if file_path == "Error tab name":
+                self.show_message("Tabs in Excel are not correctly named, please check that the first tab is the"
+                                  "'Sales Invoice VAT 20%' and the second tab is 'UK purchase invoices'.")
             print(file_path)
             self.show_message("Your files have been generated successfully.")
             if self.check_state.get() == 1:
