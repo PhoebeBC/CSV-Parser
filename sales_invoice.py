@@ -7,6 +7,8 @@ def fill_data_for_sales_invoice(df, df_empty):
     df_empty.iloc[:, 1] = df.iloc[:, 2]
     # Setting Nominal A/C Ref C2
     df_empty.iloc[:, 2] = 4000
+
+
     # Setting Date E4
     df_empty.iloc[:, 4] = df.iloc[:, 0]
     # Setting Reference F5
@@ -25,10 +27,13 @@ def fill_data_for_sales_invoice(df, df_empty):
             df_empty.iat[row, 7] = abs(df.iat[row, 7])
             # Setting Tax Amount J9
             df_empty.iat[row, 9] = abs(df.iat[row, 5])
+            # Column D needs to be empty but we will use to determine if invoice or credit
+            df_empty.iat[row, 3] = "1"
         else:
             df_empty.iat[row, 0] = "SC"
             df_empty.iat[row, 7] = df.iat[row, 7]
             df_empty.iat[row, 9] = df.iat[row, 5]
+            df_empty.iat[row, 3] = "0"
 
     df_empty["Net Amount"] = df_empty["Net Amount"].astype(float)
     df_empty["Tax Amount"] = df_empty["Tax Amount"].astype(float)

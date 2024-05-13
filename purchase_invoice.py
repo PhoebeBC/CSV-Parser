@@ -24,10 +24,13 @@ def fill_data_for_purchase_invoice(df, df_empty, date_column_name):
             df_empty.iat[row, 7] = abs(df.at[row, "Net Amount"])
             # Setting Tax Amount J9
             df_empty.iat[row, 9] = abs(df.at[row, "Amount VAT"])
+            # Column D needs to be empty but we will use to determine if invoice or credit
+            df_empty.iat[row, 3] = "1"
         else:
             df_empty.iat[row, 0] = "PC"
             df_empty.iat[row, 7] = df.at[row, "Net Amount"]
             df_empty.iat[row, 9] = df.at[row, "Amount VAT"]
+            df_empty.iat[row, 3] = "0"
         # Setting Nominal A/C Ref C2
         if df.iat[row, 5] == "THE TAX DEPARTM":
             df_empty.iat[row, 2] = 7601
