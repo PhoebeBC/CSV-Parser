@@ -1,5 +1,7 @@
 import pandas as pd
 import os
+import sys
+sys.path.append(r'C:\Users\phoeb\PycharmProjects\CSV-Parser')
 from sales_invoice import fill_data_for_sales_invoice
 from purchase_invoice import fill_data_for_purchase_invoice
 
