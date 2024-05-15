@@ -1,5 +1,4 @@
 import tkinter as ct
-from excel_parser import excel_parser
 from tkinter import IntVar, Canvas, Entry, Button, PhotoImage, messagebox, filedialog, END, Checkbutton
 # import sys
 # sys.path.append(r'C:\Users\phoeb\PycharmProjects\CSV-Parser')
@@ -11,6 +10,7 @@ import re
 import pandas as pd
 from pathlib import Path
 import sys
+from excel_parser import excel_parser
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     bundle_dir = Path(sys._MEIPASS)

@@ -6,6 +6,7 @@ import re
 sys.path.append(r'C:\Users\phoeb\PycharmProjects\CSV-Parser')
 from sales_invoice import fill_data_for_sales_invoice
 from purchase_invoice import fill_data_for_purchase_invoice
+from new_customer_supplier import check_for_new_customer, check_for_new_supplier
 
 
 def create_empty_df(df):
@@ -47,7 +48,7 @@ def format_excel(writer, sheet):
 
 
 def convert_to_excel(df, output_path, invoice_type, invoice_or_credit="Invoice"):
-    # Likely hat purchase credit has no entries so don't want to output if this is the case
+    # Likely that purchase credit has no entries so don't want to output if this is the case
     if not df.empty:
         # Setting column back to emtpy after using it to filter credit or invoice
         df.loc[:, "Department Code"] = ""
@@ -59,6 +60,22 @@ def convert_to_excel(df, output_path, invoice_type, invoice_or_credit="Invoice")
         format_excel(writer, invoice_type + invoice_or_credit)
 
 
+def convert_to_excel_new(df, output_path, invoice_type):
+    if not df.empty:
+        print(df)
+        if invoice_type == 'Sales':
+            account_type = "Customer"
+        else:
+            account_type = "Supplier"
+        # Pushing to excel
+        writer = pd.ExcelWriter(f"{output_path} New {account_type} List.xlsx", engine='xlsxwriter')
+        df.to_excel(writer, index=False, sheet_name=f"New {account_type} List")
+        # Formatting
+        worksheet = writer.sheets[f"New {account_type} List"]
+        worksheet.set_column('A:B', 16)
+        writer.close()
+
+
 def generate_dataframe_output(df, invoice_type, output_path, date_column_name):
     # only pulling rows where the date is not empty
     df = df.dropna(subset=[date_column_name])
@@ -67,8 +84,11 @@ def generate_dataframe_output(df, invoice_type, output_path, date_column_name):
     # Filling the output dataframe with data
     if invoice_type == 'Sales':
         df_formatted = fill_data_for_sales_invoice(df, df_formatted_empty)
+        # Checking if new customers are in the data and producing excel for those new customers
+        df_new_customers_suppliers = check_for_new_customer(df)
     else:
         df_formatted = fill_data_for_purchase_invoice(df, df_formatted_empty, date_column_name)
+        df_new_customers_suppliers = check_for_new_supplier(df)
 
     # Splitting data frame into credit transactions and invoice transactions
     df_invoice = df_formatted.loc[df_formatted["Department Code"] == "1"]
@@ -76,6 +96,7 @@ def generate_dataframe_output(df, invoice_type, output_path, date_column_name):
 
     convert_to_excel(df_invoice, output_path, invoice_type)
     convert_to_excel(df_credit, output_path, invoice_type, "Credit")
+    convert_to_excel_new(df_new_customers_suppliers, output_path, invoice_type)
 
 
 def tab_name_check(tab_name, check):
@@ -131,5 +152,5 @@ def excel_parser(excel_file):
     return output_path
 
 
-#excel_parser(
- #   r"C:\Users\phoeb\Documents\Work\Company software solutions\Excels Run\VAT Return Nov 23 till Jan 24 TTDL.xlsx")
+# excel_parser(
+#    r"C:\Users\phoeb\Documents\Work\Company software solutions\Excels Run\VAT Return Nov 23 till Jan 24 TTDL.xlsx")
