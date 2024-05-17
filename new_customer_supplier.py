@@ -1,6 +1,7 @@
 import pandas as pd
-from database import add_customer, get_customer, add_supplier, get_supplier, get_table, delete_table
+from database import AccountsDatabase
 
+db = AccountsDatabase()
 column_headers = ["Account Reference", "Account Name", "Street 1", "Street 2", "Town", "County", "Postcode",
                   "Contact Name", "Telephone Number", "Fax Number", "Analysis 1", "Analysis 2", "Analysis 3",
                   "Department", "VAT Reg No", "MTD Turnover", "YTD Turnover", "Last Year", "Credit Limit", "Terms Text",
@@ -19,7 +20,7 @@ column_headers = ["Account Reference", "Account Name", "Street 1", "Street 2", "
 
 
 def check_for_new_customer(df):
-    #delete_table("customer")
+    #db.delete_table("customer")
     # Creating a df for just cust ref and name
     df_customer = df.iloc[:, [2, 3]].copy()
     # Removing duplicates
@@ -35,9 +36,9 @@ def check_for_new_customer(df):
         name = df_customer.iat[row, 1]
         print(f"name = {name}")
         # If we have a new customer we add to db and to new customer df
-        if get_customer(reference) is None:
+        if db.get_customer(reference) is None:
             print(f" row = {row}")
-            add_customer(reference, name)
+            db.add_customer(reference, name)
             df_new.iat[row, 0] = reference
             df_new.iat[row, 1] = name
     # Removing any extra rows at the end
@@ -47,7 +48,7 @@ def check_for_new_customer(df):
 
 
 def check_for_new_supplier(df):
-    #delete_table("supplier")
+    #db.delete_table("supplier")
     # Creating a df for just cust ref and name
     df_supplier = df.iloc[:, [4, 5]].copy()
     # Removing duplicates
@@ -61,8 +62,8 @@ def check_for_new_supplier(df):
         reference = df_supplier.iat[row, 0]
         name = df_supplier.iat[row, 1]
         # If we have a new supplier we add to db and to new supplier df
-        if get_supplier(reference) is None:
-            add_supplier(reference, name)
+        if db.get_supplier(reference) is None:
+            db.add_supplier(reference, name)
             df_new.iat[row, 0] = reference
             df_new.iat[row, 1] = name
     df_new = df_new.dropna(subset=["Account Reference"])

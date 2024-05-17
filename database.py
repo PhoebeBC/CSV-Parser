@@ -1,72 +1,59 @@
 import sqlite3
+from psycopg import sql
 
 
-def add_customer(ref, name):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    cursor.execute('''INSERT INTO customer VALUES (?, ?)''', (ref, name))
-    conn.commit()
-    conn.close()
+class AccountsDatabase:
+    def __init__(self, db_name='accounts_formatter'):
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
+        self.create_table()
 
-def get_customer(ref):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    cursor.execute('''SELECT name FROM customer WHERE reference = ?''', (ref,))
-    row = cursor.fetchone()
-    conn.close()
-    return row[0] if row else None
+    def create_table(self, table):
+        assert isinstance(table, str)
+        if not table.isidentifier():
+            raise ValueError("Invalid table name")
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS {table} (key INTEGER PRIMARY KEY AUTOINCREMENT,value TEXT NOT "
+                            "NULL)")
+        self.conn.commit()
 
-def add_supplier(ref, name):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    cursor.execute('''INSERT INTO supplier VALUES (?, ?)''', (ref, name))
-    conn.commit()
-    conn.close()
+    def add_customer(self, ref, name):
+        self.cursor.execute('''INSERT INTO customer VALUES (?, ?)''', (ref, name))
+        self.conn.commit()
 
-def get_supplier(ref):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    cursor.execute('''SELECT name FROM supplier WHERE reference = ?''', (ref,))
-    row = cursor.fetchone()
-    conn.close()
-    return row[0] if row else None
+    def get_customer(self, ref):
+        self.cursor.execute('''SELECT name FROM customer WHERE reference = ?''', (ref,))
+        return self.cursor.fetchone()
 
-def delete_customer(ref):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    cursor.execute('''DELETE FROM customer WHERE reference = ?''', (ref,))
-    conn.commit()
-    conn.close()
+    def add_supplier(self, ref, name):
+        self.cursor.execute('''INSERT INTO supplier VALUES (?, ?)''', (ref, name))
+        self.conn.commit()
 
-def delete_supplier(ref):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    cursor.execute('''DELETE FROM supplier WHERE reference = ?''', (ref,))
-    conn.commit()
-    conn.close()
+    def get_supplier(self, ref):
+        self.cursor.execute('''SELECT name FROM supplier WHERE reference = ?''', (ref,))
+        return self.cursor.fetchone()
 
-def delete_table(table):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    assert isinstance(table, object)
-    cursor.execute(f'DELETE FROM {table}')
-    conn.commit()
-    conn.close()
+    def delete_customer(self, ref):
+        self.cursor.execute('''DELETE FROM customer WHERE reference = ?''', (ref,))
+        self.conn.commit()
 
+    def delete_supplier(self, ref):
+        self.cursor.execute('''DELETE FROM supplier WHERE reference = ?''', (ref,))
+        self.conn.commit()
 
-def get_table(table):
-    conn = sqlite3.connect('accounts_formatter.db')
-    cursor = conn.cursor()
-    assert isinstance(table, object)
-    cursor.execute(f'SELECT * FROM {table}')
-    rows = cursor.fetchall()
-    print("Column Headers:", [description[0] for description in cursor.description])
-    # Print each row of the table
-    for row in rows:
-        print(row)
-    conn.close()
+    def delete_table(self, table):
+        assert isinstance(table, str)
+        if not table.isidentifier():
+            raise ValueError("Invalid table name")
+        self.cursor.execute(f'DELETE FROM {table}')
+        self.conn.commit()
 
+    def get_table(self, table):
+        assert isinstance(table, object)
+        self.cursor.execute(f'SELECT * FROM {table}')
+        return self.cursor.fetchall()
 
-#delete_table("customer")
-#delete_table("supplier")
+    def close_db(self):
+        self.conn.close()
+
+db = AccountsDatabase()
 
