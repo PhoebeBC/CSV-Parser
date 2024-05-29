@@ -1,5 +1,8 @@
 import pandas as pd
+import logging
 from database import AccountsDatabase
+
+logger = logging.getLogger("Accounts_Formatter")
 
 db = AccountsDatabase()
 column_headers = ["Account Reference", "Account Name", "Street 1", "Street 2", "Town", "County", "Postcode",
@@ -19,52 +22,98 @@ column_headers = ["Account Reference", "Account Name", "Street 1", "Street 2", "
                   "EORI Number", "Incoterms"]
 
 
-def check_for_new_customer(df):
-    #db.delete_table("customer")
-    # Creating a df for just cust ref and name
-    df_customer = df.iloc[:, [2, 3]].copy()
+def adding_new_entries(df, df_entries, category):
+    rows = len(df)
+    for row in range(rows):
+        reference = df.iat[row, 0]
+        name = df.iat[row, 1]
+        if category == "Customer":
+            if db.get_customer(reference) is None:
+                logger.debug(f"Adding Customer to db - reference: %s, name: %s", reference, name)
+                db.add_customer(reference, name)
+                df_entries.iat[row, 0] = reference
+                df_entries.iat[row, 1] = name
+            else:
+                logger.debug(f"Customer already in db - reference: %s, name: %s", reference, name)
+        else:  # category == supplier
+            if db.get_supplier(reference) is None:
+                logger.debug(f"Adding Supplier to db - reference: %s, name: %s", reference, name)
+                db.add_supplier(reference, name)
+                df_entries.iat[row, 0] = reference
+                df_entries.iat[row, 1] = name
+            else:
+                logger.debug(f"Supplier already in db - reference: %s, name: %s", reference, name)
+    return df_entries
+
+
+def find_new_entries(df, category):
     # Removing duplicates
-    df_customer.drop_duplicates(inplace=True)
-    # Getting num of rows for for loop to iterate through
-    rows = len(df_customer)
-    # Creating df for new customers
-    df_new = pd.DataFrame(columns=column_headers, index=range(rows))
+    df.drop_duplicates(inplace=True)
+    # Creating df for new entries
+    df_entries = pd.DataFrame(columns=column_headers, index=range(len(df)))
     # Iterating through customer df to find new customers
-    for row in range(rows):
-        reference = df_customer.iat[row, 0]
-        print(f"reference = {reference}")
-        name = df_customer.iat[row, 1]
-        print(f"name = {name}")
-        # If we have a new customer we add to db and to new customer df
-        if db.get_customer(reference) is None:
-            print(f" row = {row}")
-            db.add_customer(reference, name)
-            df_new.iat[row, 0] = reference
-            df_new.iat[row, 1] = name
+    df_new_entries = adding_new_entries(df, df_entries, category)
     # Removing any extra rows at the end
-    df_new = df_new.dropna(subset=["Account Reference"])
-    print(f"the df containing new customers:\n {df_new}")
-    return df_new
+    df_new_entries = df_new_entries.dropna(subset=["Account Reference"])
+    logger.debug(f"The df containing new {category}s columns: %s", df_new_entries.columns)
+    logger.debug(f"The df containing new {category}s index: %s", df_new_entries.index)
+    return df_new_entries
 
 
-def check_for_new_supplier(df):
-    #db.delete_table("supplier")
+def check_for_new_entry(df, category="Customer"):
+    logger.debug(f"Checking for new {category}s")
     # Creating a df for just cust ref and name
-    df_supplier = df.iloc[:, [4, 5]].copy()
-    # Removing duplicates
-    df_supplier.drop_duplicates(inplace=True)
-    # Getting num of rows for for loop to iterate through
-    rows = len(df_supplier)
-    # Creating df for new suppliers
-    df_new = pd.DataFrame(columns=column_headers, index=range(rows))
-    # Iterating through supplier df to find new suppliers
-    for row in range(rows):
-        reference = df_supplier.iat[row, 0]
-        name = df_supplier.iat[row, 1]
-        # If we have a new supplier we add to db and to new supplier df
-        if db.get_supplier(reference) is None:
-            db.add_supplier(reference, name)
-            df_new.iat[row, 0] = reference
-            df_new.iat[row, 1] = name
-    df_new = df_new.dropna(subset=["Account Reference"])
+    if category == "Customer":
+        df_category = df.iloc[:, [2, 3]].copy()
+    else:
+        df_category = df.iloc[:, [4, 5]].copy()
+    df_new = find_new_entries(df_category, category)
     return df_new
+
+# def check_for_new_customer(df):
+#     logger.debug(f"Checking for new customer")
+#     # Creating a df for just cust ref and name
+#     df_customer = df.iloc[:, [2, 3]].copy()
+#     # Removing duplicates
+#     df_customer.drop_duplicates(inplace=True)
+#     # Creating df for new customers
+#     df_new = pd.DataFrame(columns=column_headers, index=range(len(df_customer)))
+#     # Iterating through customer df to find new customers
+#     for row in df_customer.index:
+#         reference = df_customer.iat[row, 0]
+#         name = df_customer.iat[row, 1]
+#         # If we have a new customer we add to db and to new customer df
+#         if db.get_customer(reference) is None:
+#             logger.debug(f"Adding Customer to db - reference: %s, name: %s", reference, name)
+#             # print(f" row = {row}")
+#             db.add_customer(reference, name)
+#             df_new.iat[row, 0] = reference
+#             df_new.iat[row, 1] = name
+#         else:
+#             logger.debug(f"Customer already in db - reference: %s, name: %s", reference, name)
+#     # Removing any extra rows at the end
+#     df_new = df_new.dropna(subset=["Account Reference"])
+#     logger.debug(f"The df containing new customers columns: %s", df_new.columns)
+#     logger.debug(f"The df containing new customers index: %s", df_new.index)
+#     return df_new
+#
+#
+# def check_for_new_supplier(df):
+#     # db.delete_table("supplier")
+#     # Creating a df for just cust ref and name
+#     df_supplier = df.iloc[:, [4, 5]].copy()
+#     # Removing duplicates
+#     df_supplier.drop_duplicates(inplace=True)
+#     # Creating df for new suppliers
+#     df_new = pd.DataFrame(columns=column_headers, index=range(len(df_supplier)))
+#     # Iterating through supplier df to find new suppliers
+#     for row in df_supplier.index:
+#         reference = df_supplier.iat[row, 0]
+#         name = df_supplier.iat[row, 1]
+#         # If we have a new supplier we add to db and to new supplier df
+#         if db.get_supplier(reference) is None:
+#             db.add_supplier(reference, name)
+#             df_new.iat[row, 0] = reference
+#             df_new.iat[row, 1] = name
+#     df_new = df_new.dropna(subset=["Account Reference"])
+#     return df_new

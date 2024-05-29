@@ -1,15 +1,14 @@
-import tkinter as ct
-from tkinter import IntVar, Canvas, Entry, Button, PhotoImage, messagebox, filedialog, END, Checkbutton
-# import sys
-# sys.path.append(r'C:\Users\phoeb\PycharmProjects\CSV-Parser')
-# from excel_parser import excel_parser
-import os
-import subprocess
+import logging
 import platform
 import re
-import pandas as pd
-from pathlib import Path
+import os
+import subprocess
 import sys
+import tkinter as ct
+from pathlib import Path
+from tkinter import IntVar, Canvas, Entry, Button, PhotoImage, messagebox, filedialog, END, Checkbutton
+
+from custom_exception import ExcelParserException
 from excel_parser import excel_parser
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -18,6 +17,7 @@ else:
     bundle_dir = Path(__file__).parent
 
 bundle_dir = Path.cwd() / bundle_dir
+logger = logging.getLogger("Accounts_Formatter")
 
 
 class CsvParserGui():
@@ -25,7 +25,7 @@ class CsvParserGui():
     def __init__(self):
 
         self.root = ct.Tk()
-
+        logger.info('tkinter app running')
         self.root.geometry("700x500")
         self.root.configure(bg="#ffffff")
         self.root.title("Accounts Software Developed for The Tax Department Ltd")
@@ -89,12 +89,13 @@ class CsvParserGui():
                                                         fill="#000000",
                                                         font=("Inter", 16 * -1))
 
-        #self.root.resizable(False, False)
+        # self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
 
     def clear(self):
         self.enter_file_path.delete(0, END)
+        logger.info("Entry box cleared")
 
     def on_closing(self):
         if messagebox.askyesno(title="Quit?", message="Are you sure you want to quit?"):
@@ -110,46 +111,63 @@ class CsvParserGui():
         """
         self.clear()
         self.enter_file_path.insert(0, file_path)
+        logger.info("Entry box filled with file path: %s", file_path)
+
 
     def browse_file(self):
-        """This fuctioned is called with the browse button when the user is selecting the file"""
+        """This function is called with the browse button when the user is selecting the file"""
         file_path: str = filedialog.askopenfilename()
-        print("Selected file:", file_path)
+        logger.info("Selected file: %s", file_path)
         self.fill_file_path_box(file_path)
 
     def get_entered_file_path(self):
         excel_to_parse = self.enter_file_path.get()
+        logger.info("found file path for excel: %s", excel_to_parse)
         excel_to_parse = re.sub(r'\n', '', excel_to_parse)
-        print("Text saved:", excel_to_parse)
         return excel_to_parse
 
     def open_file_explorer(self, file_path):
         # Get the directory of the file
         directory = os.path.dirname(file_path)
+        logger.info("os import is working, Directory: %s", directory)
         # Open file explorer to the directory
         if platform.system() == 'Windows':
             os.startfile(directory)
+            logger.debug("Operating system is windows")
         else:
             subprocess.Popen(['xdg-open', directory])
+            logger.debug("Operating system is not windows")
 
     def generate_files(self):
         """This function is called when pressing the generate files button. Want to check the file is not empty by
         retrieving the file name from the text box"""
         excel_to_parse = self.get_entered_file_path()
+        logger.info("Parsing: %s", excel_to_parse)
         try:
             file_path = excel_parser(excel_to_parse)
-            if file_path == "Error tab name":
-                self.show_message("Tabs in Excel are not correctly named, please check that the first tab is the"
-                                  "'Sales Invoice VAT 20%' and the second tab is 'UK purchase invoices'.")
-            print(file_path)
             self.show_message("Your files have been generated successfully.")
+            logger.info(f"Successfully Parsed: %s -> %s", excel_to_parse, file_path)
+            logger.debug(f"Variable for tick box to open file explorer %d", self.check_state.get())
             if self.check_state.get() == 1:
                 self.open_file_explorer(file_path)
         except FileNotFoundError:
-            self.show_message("You have not selected a file.")
+            self.show_message("File was not found. Have you selected a file?")
+            logger.error("File was not found")
+        except ExcelParserException as e:
+            self.show_message("Tabs in Excel are not correctly named, please check that the first tab is the"
+                              "'Sales Invoice VAT 20%' and the second tab is 'UK purchase invoices'.")
+            logger.error("Excel file tab names were not a close enough math to open")
         except Exception as e:
             # Handle all other types of exceptions
-            self.show_message("An error occurred:", e)
+            self.show_message(f"An error occurred: {e}")
+            logger.error(f"An error occurred: %s", e)
 
 
-csv_parser = CsvParserGui()
+def setup_logger():
+    logging.basicConfig(filename='accounts_formatter.log', level=logging.DEBUG)
+    logger.info('Started')
+
+
+if __name__ == "__main__":
+    setup_logger()
+    csv_parser = CsvParserGui()
