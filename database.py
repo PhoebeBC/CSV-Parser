@@ -1,6 +1,8 @@
 import sqlite3
 import logging
+
 logger = logging.getLogger("Accounts_Formatter")
+
 
 class AccountsDatabase:
     def __init__(self, db_name='accounts_formatter.db'):
@@ -12,37 +14,49 @@ class AccountsDatabase:
 
     def create_table(self, table: str):
         self.cursor.execute(
-            f"CREATE TABLE IF NOT EXISTS {table} (reference INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT "
-            "NULL)")
+            f"CREATE TABLE IF NOT EXISTS {table} (reference INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)")
         logger.info("Table created: %s", table)
         self.conn.commit()
 
     def add_customer(self, ref, name):
+        ref = int(ref)
         self.cursor.execute('''INSERT INTO customer VALUES (?, ?)''', (ref, name))
         logger.info("Customer added: %s", name)
         self.conn.commit()
 
     def get_customer(self, ref):
+        ref = int(ref)
         self.cursor.execute('''SELECT name FROM customer WHERE reference = ?''', (ref,))
         logger.info("Customer accessed: %d", ref)
         return self.cursor.fetchone()
 
     def add_supplier(self, ref, name):
+        ref = int(ref)
         self.cursor.execute('''INSERT INTO supplier VALUES (?, ?)''', (ref, name))
         logger.info("Supplier added: %s", name)
         self.conn.commit()
 
     def get_supplier(self, ref):
+        ref = int(ref)
+        print(f'ref = {ref}')
+        print(f'ref type = {type(ref)}')
         self.cursor.execute('''SELECT name FROM supplier WHERE reference = ?''', (ref,))
         logger.info("Supplier accessed: %d", ref)
-        return self.cursor.fetchone()
+        result = self.cursor.fetchone()
+        print(f'get supplier result {result}')
+        print(f'get supplier result ref {result[0]}')
+        if result:
+            return result[0]  # Return the name
+        return None  # Return None if no account is found
 
     def delete_customer(self, ref):
+        ref = int(ref)
         self.cursor.execute('''DELETE FROM customer WHERE reference = ?''', (ref,))
         logger.info("Customer deleted: %d", ref)
         self.conn.commit()
 
     def delete_supplier(self, ref):
+        ref = int(ref)
         self.cursor.execute('''DELETE FROM supplier WHERE reference = ?''', (ref,))
         logger.info("Supplier deleted: %d", ref)
         self.conn.commit()
@@ -63,4 +77,6 @@ class AccountsDatabase:
     def close_db(self):
         self.conn.close()
 
-# db = AccountsDatabase()
+
+# check = AccountsDatabase()
+# print(check.get_supplier(10967))

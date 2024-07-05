@@ -20,7 +20,7 @@ bundle_dir = Path.cwd() / bundle_dir
 logger = logging.getLogger("Accounts_Formatter")
 
 
-class CsvParserGui():
+class CsvParserGui:
 
     def __init__(self):
 
@@ -80,6 +80,7 @@ class CsvParserGui():
 
         self.file_entry_image = PhotoImage(file=bundle_dir / "images/entry_1.png")
         self.file_entry_bg = self.window.create_image(280.0, 180.0, image=self.file_entry_image)
+
         self.enter_file_path = Entry(bd=0, bg="#DCEEEB", fg="#000716", highlightthickness=0, font=("Inter", 16 * -1))
         self.enter_file_path.place(x=40.0, y=160.0, width=480.0, height=38.0)
 
@@ -89,7 +90,6 @@ class CsvParserGui():
                                                         fill="#000000",
                                                         font=("Inter", 16 * -1))
 
-        # self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
 
@@ -112,7 +112,7 @@ class CsvParserGui():
         self.clear()
         self.enter_file_path.insert(0, file_path)
         logger.info("Entry box filled with file path: %s", file_path)
-
+        return file_path
 
     def browse_file(self):
         """This function is called with the browse button when the user is selecting the file"""
@@ -146,21 +146,21 @@ class CsvParserGui():
         try:
             file_path = excel_parser(excel_to_parse)
             self.show_message("Your files have been generated successfully.")
-            logger.info(f"Successfully Parsed: %s -> %s", excel_to_parse, file_path)
-            logger.debug(f"Variable for tick box to open file explorer %d", self.check_state.get())
+            logger.info("Successfully Parsed: %s -> %s", excel_to_parse, file_path)
+            logger.debug("Variable for tick box to open file explorer %d", self.check_state.get())
             if self.check_state.get() == 1:
                 self.open_file_explorer(file_path)
         except FileNotFoundError:
             self.show_message("File was not found. Have you selected a file?")
             logger.error("File was not found")
-        except ExcelParserException as e:
+        except ExcelParserException:
             self.show_message("Tabs in Excel are not correctly named, please check that the first tab is the"
                               "'Sales Invoice VAT 20%' and the second tab is 'UK purchase invoices'.")
             logger.error("Excel file tab names were not a close enough math to open")
         except Exception as e:
             # Handle all other types of exceptions
             self.show_message(f"An error occurred: {e}")
-            logger.error(f"An error occurred: %s", e)
+            logger.error("An error occurred: %s", e)
 
 
 def setup_logger():

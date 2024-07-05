@@ -2,7 +2,7 @@ import logging
 logger = logging.getLogger("Accounts_Formatter")
 
 
-def fill_uniform_data_purchanse(df, df_empty, date_column_name):
+def fill_uniform_data_purchase(df, df_empty, date_column_name):
     df_empty.iloc[:, 1] = df.loc[:, "Gegenkonto"]
     # Setting Date E4
     df_empty.iloc[:, 4] = df.loc[:, date_column_name]
@@ -38,10 +38,10 @@ def fill_dependant_data_purchase(df, df_partial_fill):
             df_partial_fill.iat[row, 2] = 7601
         else:
             df_partial_fill.iat[row, 2] = 5000
-    
     df_partial_fill["Net Amount"] = df_partial_fill["Net Amount"].astype(float)
     df_partial_fill["Tax Amount"] = df_partial_fill["Tax Amount"].astype(float)
     return df_partial_fill
+
 
 def fill_data_for_purchase_invoice(df, df_empty, date_column_name):
     """
@@ -50,7 +50,7 @@ def fill_data_for_purchase_invoice(df, df_empty, date_column_name):
     """
     # column_headers = ["Belegdatum", "Belegnummer", "Sequenznummer", "Typ", "Gegenkonto", "Kurzbezeichnung",
     # "BW", "Net Amount", "Amount VAT", "Notiz"]
-    df_partial_fill = fill_uniform_data_purchanse(df, df_empty, date_column_name)
+    df_partial_fill = fill_uniform_data_purchase(df, df_empty, date_column_name)
     df_filled = fill_dependant_data_purchase(df, df_partial_fill)
     logger.info("Sales invoice data filled")
     return df_filled

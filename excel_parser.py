@@ -16,7 +16,6 @@ def create_empty_df(df):
     Creating an empty dataframe with the same number of rows as df to be filled with data from df later.
     """
     number_of_rows = len(df)
-    # Column names
     column_names = ['Type', 'Account Reference', 'Nominal A/C Ref', 'Department Code', 'Date', 'Details',
                     'Reference', 'Net Amount', 'Tax Code', 'Tax Amount', 'Exchange Rate', 'Extra Reference',
                     'User Name', 'Project Refn', 'Cost Code Refn', 'Country of VAT', 'Report Type', 'Fund']
@@ -117,7 +116,6 @@ def tab_name_check(tab_name, check):
     Checking that the tabs we have found are a close match for what we are expecting to ensure pulling data from
     correct tab.
     """
-    # Checking tab name is expected
     if not check.match(tab_name):
         logger.error("Tab name match failure.")
         return 1
@@ -141,6 +139,7 @@ def get_sheet_names(xls):
         raise ExcelParserException("Tab name is incorrect")
     return first_sheet_name, second_sheet_name
 
+
 def find_date_column(df):
     """
     Finding the date column header name by searching for the column with a date time format
@@ -149,6 +148,7 @@ def find_date_column(df):
         if df[column].dtype == 'datetime64[ns]':
             logger.info(f"Date column name= {column}")
             return column
+    return "No Date Column"
 
 
 def create_dataframe(xls, output_path, sheet_name, tab_type):
@@ -173,5 +173,4 @@ def excel_parser(excel_file):
     create_dataframes_from_excel(xls, output_path)
     return output_path
 
-excel_parser(
-   r"C:\Users\phoeb\Documents\Work\Company software solutions\Excels Run\VAT Return Nov 23 till Jan 24 TTDL.xlsx")
+
