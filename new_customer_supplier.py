@@ -36,8 +36,6 @@ def adding_new_entries(df, df_entries, category):
             else:
                 logger.debug("Customer already in db - reference: %s, name: %s", reference, name)
         else:  # category == supplier
-            print(f'get supplier result = {db.get_supplier(reference)}')
-            print(f'get supplier result bool = {db.get_supplier(reference) is None}')
             if db.get_supplier(reference) is None: # This went wrong
                 logger.debug("Adding Supplier to db - reference: %s, name: %s", reference, name)
                 db.add_supplier(reference, name)
@@ -51,7 +49,6 @@ def adding_new_entries(df, df_entries, category):
 def find_new_entries(df, category):
     # Removing duplicates
     df.drop_duplicates(inplace=True)
-    print(f'No dupes df = {df}')
     # Creating df for new entries
     df_entries = pd.DataFrame(columns=column_headers, index=range(len(df)))
     # Iterating through customer df to find new customers
@@ -70,7 +67,5 @@ def check_for_new_entry(df, category="Customer"):
         df_category = df.iloc[:, [2, 3]].copy()
     else:
         df_category = df.loc[:, ["Gegenkonto", "Kurzbezeichnung"]].copy()
-        print(df_category)
-        print(f'category = {category}')
     df_new = find_new_entries(df_category, category)
     return df_new

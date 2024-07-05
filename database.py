@@ -20,6 +20,7 @@ class AccountsDatabase:
 
     def add_customer(self, ref, name):
         ref = int(ref)
+        name = str(name)
         self.cursor.execute('''INSERT INTO customer VALUES (?, ?)''', (ref, name))
         logger.info("Customer added: %s", name)
         self.conn.commit()
@@ -32,19 +33,16 @@ class AccountsDatabase:
 
     def add_supplier(self, ref, name):
         ref = int(ref)
+        name = str(name)
         self.cursor.execute('''INSERT INTO supplier VALUES (?, ?)''', (ref, name))
         logger.info("Supplier added: %s", name)
         self.conn.commit()
 
     def get_supplier(self, ref):
         ref = int(ref)
-        print(f'ref = {ref}')
-        print(f'ref type = {type(ref)}')
         self.cursor.execute('''SELECT name FROM supplier WHERE reference = ?''', (ref,))
         logger.info("Supplier accessed: %d", ref)
         result = self.cursor.fetchone()
-        print(f'get supplier result {result}')
-        print(f'get supplier result ref {result[0]}')
         if result:
             return result[0]  # Return the name
         return None  # Return None if no account is found

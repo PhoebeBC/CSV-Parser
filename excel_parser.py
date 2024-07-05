@@ -5,7 +5,7 @@ import pandas as pd
 
 from custom_exception import ExcelParserException
 from sales_invoice import fill_data_for_sales_invoice
-from purchase_invoice import fill_data_for_purchase_invoice
+from purchase_invoice import fill_data_for_purchase_invoice, tab_header_name_check
 from new_customer_supplier import check_for_new_entry
 
 logger = logging.getLogger("Accounts_Formatter")
@@ -111,17 +111,6 @@ def generate_dataframe_output(df, tab_type, output_path, date_column_name):
     convert_to_excel_new_entries(df_new_customers_suppliers, output_path, tab_type)
 
 
-def tab_name_check(tab_name, check):
-    """
-    Checking that the tabs we have found are a close match for what we are expecting to ensure pulling data from
-    correct tab.
-    """
-    if not check.match(tab_name):
-        logger.error("Tab name match failure.")
-        return 1
-    return 0
-
-
 def get_sheet_names(xls):
     # Finding first sheet
     first_sheet_name = xls.sheet_names[0]
@@ -134,8 +123,8 @@ def get_sheet_names(xls):
     second_sheet_check = re.compile(r'.*uk\s*purchase\w*\s*invoice\w*\s*.*', re.IGNORECASE)
 
     # Checking tab name is expected
-    if (tab_name_check(first_sheet_name, first_sheet_check) == 1 or
-            tab_name_check(second_sheet_name, second_sheet_check) == 1):
+    if (tab_header_name_check(first_sheet_name, first_sheet_check, "tab") == 1 or
+            tab_header_name_check(second_sheet_name, second_sheet_check, "tab") == 1):
         raise ExcelParserException("Tab name is incorrect")
     return first_sheet_name, second_sheet_name
 
